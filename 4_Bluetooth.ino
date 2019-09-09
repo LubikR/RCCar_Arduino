@@ -8,7 +8,8 @@ int motor_2B = 7;
 int motor_1_PWM = 5;
 int motor_2_PWM = 6;
 
-SoftwareSerial serialBL(11,12); //RX, TX
+SoftwareSerial bluetooth(11,12); //RX, TX
+char BTData;
 
 int pTrig = 9;
 int pEcho = 10;
@@ -36,25 +37,58 @@ void setup() {
   pinMode(pEcho, INPUT);
 
   Serial.begin(9600);
-  serialBL.begin(9600);
-
-  sendCommand("AT");
-  sendCommand("AT+ROLE0");
-  sendCommand("AT+NAMEbluino");
-  sendCommand("AT+HELP");
+  bluetooth.begin(9600);
 
   servo.attach(servoPin);
   kalibruj_servo();
+
+  bluetooth.println("AT");
+  Serial.println("AT");
+  delay(100);
+  while (bluetooth.available()) {
+    Serial.write(bluetooth.read());
+  }
+  delay(300);
+
+  bluetooth.println("AT+DEFAULT");
+  Serial.println("AT+DEFAULT");
+  delay(100);
+  while (bluetooth.available()) {
+    Serial.write(bluetooth.read());
+  }
+  delay(300);
+
+  bluetooth.println("AT+ROLE0");
+  Serial.println("AT+ROLE0");
+  delay(100);
+  while (bluetooth.available()) {
+    Serial.write(bluetooth.read());
+  }
+  delay(300);
+
+  bluetooth.println("AT+NAMEAuto");
+  Serial.println("AT+NAMEAuto");
+  delay(100);
+  while (bluetooth.available()) {
+    Serial.println(bluetooth.readString());
+  }
 }
 
 void loop() {
+  /*
+  if (!jedu) {
+    bluetooth.println("AT+HELP?");
+    Serial.println("AT");
   
-  vzd_rovne = getVzdalenost();
-  vzd_rovne = 0;
+    if (bluetooth.available()) {
+    Serial.print(char(bluetooth.read()));
+    }  
+  jedu = true;*/
+  //vzd_rovne = getVzdalenost();
+  //}
+}
 
-
-
-  
+void jedAutomaticky() {
   if ((jedu) || (vzd_rovne < 7) && (vzd_rovne > 0)) {
 
     if (!jedu) {
@@ -226,14 +260,14 @@ void rekniNE() {
 void sendCommand(const char * command) {
   Serial.print("Command send :");
   Serial.println(command);
-  serialBL.println(command);
+  bluetooth.println(command);
   //wait some time
-  delay(100);
+  delay(200);
 
-  char reply[100];
+  char reply[200];
   int i = 0;
-  while (serialBL.available()) {
-    reply[i] = serialBL.read();
+  while (bluetooth.available()) {
+    reply[i] = bluetooth.read();
     i += 1;
   }
   //end the string
