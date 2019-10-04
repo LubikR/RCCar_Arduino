@@ -8,22 +8,22 @@ int motor_2B = 7;
 int motor_1_PWM = 5;
 int motor_2_PWM = 6;
 
-SoftwareSerial bluetooth(11,12); //RX, TX
-char BTData;
+#define pTrig 9
+#define pEcho 10
 
-int pTrig = 9;
-int pEcho = 10;
+SoftwareSerial bluetooth(11,12); //RX, TX
+Servo servo;
 
 int servoPin = 8;
 int stredServa = 110;
+
+int speed = 100;
 
 long odezva, vzd_rovne, vzd_vpravo, vzd_vlevo;
 bool jedu = false;
 bool leva_prava = false; // kam se koukam, do leva nebo do prava
 int pocet_prekazek = 0;
-int speed = 70; //fixed motor speed
-
-Servo servo;
+char c = 'S';
 
 void setup() {
   pinMode(motor_1A, OUTPUT);
@@ -41,53 +41,57 @@ void setup() {
 
   servo.attach(servoPin);
   kalibruj_servo();
+  servo.detach();
 
-  bluetooth.println("AT");
-  Serial.println("AT");
-  delay(100);
-  while (bluetooth.available()) {
-    Serial.write(bluetooth.read());
-  }
-  delay(300);
-
-  bluetooth.println("AT+DEFAULT");
-  Serial.println("AT+DEFAULT");
-  delay(100);
-  while (bluetooth.available()) {
-    Serial.write(bluetooth.read());
-  }
-  delay(300);
-
-  bluetooth.println("AT+ROLE0");
-  Serial.println("AT+ROLE0");
-  delay(100);
-  while (bluetooth.available()) {
-    Serial.write(bluetooth.read());
-  }
-  delay(300);
-
-  bluetooth.println("AT+NAMEAuto");
-  Serial.println("AT+NAMEAuto");
-  delay(100);
-  while (bluetooth.available()) {
-    Serial.println(bluetooth.readString());
-  }
+  analogWrite(motor_1_PWM, 100);
+  analogWrite(motor_2_PWM, 100);
 }
 
 void loop() {
-  /*
-  if (!jedu) {
-    bluetooth.println("AT+HELP?");
-    Serial.println("AT");
-  
+    vzd_rovne = getVzdalenost();
+    
+   Serial.print("Vzdalenost je: ");
+   Serial.print(vzd_rovne);
+   Serial.println();
+   
     if (bluetooth.available()) {
-    Serial.print(char(bluetooth.read()));
+      c = bluetooth.read();
+      
+      Serial.print("Prijato : ");
+      Serial.print(c);
+      Serial.println();
+
+      if (c == 'F' && vzd_rovne < 25) { 
+        Serial.println("Menim na S");
+        c = 'S'; 
+        } //tvrdy stop, nemam kam jet*/
+
+      if (c == 'F') jed_dopredu();
+      if (c == 'R') otoc_doprava();
+      if (c == 'L') otoc_doleva();
+      if (c == 'B') jed_dozadu();
+      if (c == 'S') zastav();
     }  
-  jedu = true;*/
-  //vzd_rovne = getVzdalenost();
-  //}
+    // Pokud nemam na BT nic, pak jedu posledni moznosti
+    else {
+      if (c == 'F' && vzd_rovne < 25) { 
+        c = 'S'; 
+        Serial.println("Menim na S");
+      } //tvrdy stop, nemam kam jet
+
+      if (c == 'F') {
+
+      } jed_dopredu();
+      if (c == 'R') otoc_doprava();
+      if (c == 'L') otoc_doleva();
+      if (c == 'B') jed_dozadu();
+      if (c == 'S') zastav();
+    }
+  delay(200);
+  //zkus snizit, mam pocit ze to pak blbne
 }
 
+/*
 void jedAutomaticky() {
   if ((jedu) || (vzd_rovne < 7) && (vzd_rovne > 0)) {
 
@@ -152,12 +156,13 @@ void jedAutomaticky() {
       }
     }
   }
-}
+}*/
 
 long getVzdalenost() {
       digitalWrite(pTrig, HIGH);
-      delayMicroseconds(100);
+      delayMicroseconds(2);
       digitalWrite(pTrig,LOW);
+      delayMicroseconds(5);
       odezva = pulseIn(pEcho, HIGH);
       vzd_rovne = odezva / 58.31;
       return vzd_rovne;
@@ -256,7 +261,7 @@ void rekniNE() {
   servo.write(90);
   delay(400);
 }
-
+/*
 void sendCommand(const char * command) {
   Serial.print("Command send :");
   Serial.println(command);
@@ -275,4 +280,4 @@ void sendCommand(const char * command) {
   Serial.print(reply);
   Serial.println("Reply end");                 
   delay(50);
-}
+}*/
