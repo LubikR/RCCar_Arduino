@@ -17,13 +17,14 @@ Servo servo;
 int servoPin = 8;
 int stredServa = 110;
 
-int speed = 100;
+int speed = 0;
+int bezpecna_vzdalenost = 20;
 
 long odezva, vzd_rovne, vzd_vpravo, vzd_vlevo;
 bool jedu = false;
 bool leva_prava = false; // kam se koukam, do leva nebo do prava
 int pocet_prekazek = 0;
-char c = 'S';
+char c[100];
 
 void setup() {
   pinMode(motor_1A, OUTPUT);
@@ -43,49 +44,82 @@ void setup() {
   kalibruj_servo();
   servo.detach();
 
-  analogWrite(motor_1_PWM, 100);
-  analogWrite(motor_2_PWM, 100);
+  analogWrite(motor_1_PWM, speed);
+  analogWrite(motor_2_PWM, speed);
+
+  c[0] = 'S'; //Stop as default value
 }
 
 void loop() {
-    vzd_rovne = getVzdalenost();
+  vzd_rovne = getVzdalenost();
     
-   Serial.print("Vzdalenost je: ");
-   Serial.print(vzd_rovne);
-   Serial.println();
-   
-    if (bluetooth.available()) {
-      c = bluetooth.read();
+  bezpecna_vzdalenost = (speed / 10) + 25;
+  int i = 0;
+
+  if (bluetooth.available()) {
+    while (bluetooth.available()) {
+      c[i] = bluetooth.read();
+      i += 1;
+    }
       
-      Serial.print("Prijato : ");
-      Serial.print(c);
-      Serial.println();
+    Serial.print("Prijato : ");
+    Serial.print(c[0]);
+    Serial.println();
 
-      if (c == 'F' && vzd_rovne < 25) { 
-        Serial.println("Menim na S");
-        c = 'S'; 
-        } //tvrdy stop, nemam kam jet*/
-
-      if (c == 'F') jed_dopredu();
-      if (c == 'R') otoc_doprava();
-      if (c == 'L') otoc_doleva();
-      if (c == 'B') jed_dozadu();
-      if (c == 'S') zastav();
-    }  
+    if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
+      Serial.println("Menim na S");
+      c[0] = 'S'; 
+    } //tvrdy stop, nemam kam jet*/
+    
+    switch (c[0]) {
+      case 'X':
+        speed = (String(c[1]).toInt() * 100) + (String(c[2]).toInt() * 10) + (String(c[2]).toInt()); 
+        Serial.print("Speed : ");
+        Serial.println(speed);
+        analogWrite(motor_1_PWM, speed);
+        analogWrite(motor_2_PWM, speed);
+        break;
+      case 'F':
+        jed_dopredu();
+        break;
+      case 'S':
+        zastav();
+        break;
+      case 'R':
+        otoc_doprava();
+        break;
+      case 'L':
+        otoc_doleva();
+        break;
+      case 'B':
+        jed_dozadu();
+        break;
+     }
+  }  
     // Pokud nemam na BT nic, pak jedu posledni moznosti
     else {
-      if (c == 'F' && vzd_rovne < 25) { 
-        c = 'S'; 
+      if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
+        c[0] = 'S'; 
         Serial.println("Menim na S");
       } //tvrdy stop, nemam kam jet
 
-      if (c == 'F') {
-
-      } jed_dopredu();
-      if (c == 'R') otoc_doprava();
-      if (c == 'L') otoc_doleva();
-      if (c == 'B') jed_dozadu();
-      if (c == 'S') zastav();
+    switch (c[0]) {
+        case 'F':
+          jed_dopredu();
+          break;
+        case 'S':
+          zastav();
+          break;
+        case 'R':
+          otoc_doprava();
+          break;
+        case 'L':
+          otoc_doleva();
+          break;
+        case 'B':
+          jed_dozadu();
+          break;
+      }
     }
   delay(200);
   //zkus snizit, mam pocit ze to pak blbne
@@ -165,6 +199,11 @@ long getVzdalenost() {
       delayMicroseconds(5);
       odezva = pulseIn(pEcho, HIGH);
       vzd_rovne = odezva / 58.31;
+      /*
+       Serial.print("Vzdalenost je: ");
+      Serial.print(vzd_rovne);
+      Serial.println();
+      */
       return vzd_rovne;
 }
 
