@@ -23,6 +23,7 @@ int bezpecna_vzdalenost = 20;
 long odezva, vzd_rovne, vzd_vpravo, vzd_vlevo;
 bool jedu = false;
 bool leva_prava = false; // kam se koukam, do leva nebo do prava
+bool stopped = false;
 int pocet_prekazek = 0;
 char c[100];
 
@@ -60,16 +61,29 @@ void loop() {
     while (bluetooth.available()) {
       c[i] = bluetooth.read();
       i += 1;
+      if (c[0] != 'X') {
+        break;
+      }
     }
       
     Serial.print("Prijato : ");
     Serial.print(c[0]);
     Serial.println();
 
+    //tvrdy stop, nemam kam jet
     if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
       Serial.println("Menim na S");
       c[0] = 'S'; 
-    } //tvrdy stop, nemam kam jet*/
+
+      //uz jednou stopped a mam podruhe F tak reknuNE
+      if (stopped) {
+        //rekniNE();
+        stopped = false;
+      } 
+      else {
+        stopped = true;
+      }      
+    } 
     
     switch (c[0]) {
       case 'X':
@@ -98,10 +112,12 @@ void loop() {
   }  
     // Pokud nemam na BT nic, pak jedu posledni moznosti
     else {
+
+       //tvrdy stop, nemam kam jet
       if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
         c[0] = 'S'; 
         Serial.println("Menim na S");
-      } //tvrdy stop, nemam kam jet
+      }
 
     switch (c[0]) {
         case 'F':
@@ -121,8 +137,6 @@ void loop() {
           break;
       }
     }
-  delay(200);
-  //zkus snizit, mam pocit ze to pak blbne
 }
 
 /*
@@ -199,11 +213,6 @@ long getVzdalenost() {
       delayMicroseconds(5);
       odezva = pulseIn(pEcho, HIGH);
       vzd_rovne = odezva / 58.31;
-      /*
-       Serial.print("Vzdalenost je: ");
-      Serial.print(vzd_rovne);
-      Serial.println();
-      */
       return vzd_rovne;
 }
 
@@ -287,16 +296,16 @@ void kalibruj_servo() {
 }
 
 void rekniNE() {
+  servo.attach(servoPin);
   servo.write(130);
-  delay(400);
+  delay(300);
   servo.write(50);
-  delay(400);
+  delay(300);
   servo.write(130);
-  delay(400);
+  delay(300);
   servo.write(50);
-  delay(400);
-  servo.write(130);
-  delay(400);
+  delay(300);
   servo.write(90);
-  delay(400);
+  delay(300);
+  servo.detach();
 }
