@@ -300,23 +300,3 @@ void rekniNE() {
   servo.write(90);
   delay(400);
 }
-/*
-void sendCommand(const char * command) {
-  Serial.print("Command send :");
-  Serial.println(command);
-  bluetooth.println(command);
-  //wait some time
-  delay(200);
-
-  char reply[200];
-  int i = 0;
-  while (bluetooth.available()) {
-    reply[i] = bluetooth.read();
-    i += 1;
-  }
-  //end the string
-  reply[i] = '\0';
-  Serial.print(reply);
-  Serial.println("Reply end");                 
-  delay(50);
-}*/
