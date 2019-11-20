@@ -8,6 +8,22 @@ int motor_2B = 7;
 int motor_1_PWM = 5;
 int motor_2_PWM = 6;
 
+//Rychlost blikani
+const long interval = 1000;
+
+int LED_RIGHT = 12;
+boolean LedRightState = false;
+unsigned long previousMillisRight = 0;
+int LED_RIGHT_STATE = LOW;
+
+int LED_LEFT = 12;
+boolean LedLeftState = false;
+unsigned long previousMillisLeft = 0;
+int LED_LEFT_STATE = LOW;
+
+int LED_FRONT = 12;
+boolean LedFrontState = false;
+
 #define pTrig 9
 #define pEcho 10
 
@@ -34,6 +50,10 @@ void setup() {
   pinMode(motor_2B, OUTPUT);
   pinMode(motor_1_PWM, OUTPUT);
   pinMode(motor_2_PWM, OUTPUT);
+
+  pinMode(LED_FRONT, OUTPUT);
+  pinMode(LED_LEFT, OUTPUT);
+  pinMode(LED_RIGHT, OUTPUT);
 
   pinMode(pTrig, OUTPUT);
   pinMode(pEcho, INPUT);
@@ -73,16 +93,7 @@ void loop() {
     //tvrdy stop, nemam kam jet
     if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
       Serial.println("Menim na S");
-      c[0] = 'S'; 
-
-      //uz jednou stopped a mam podruhe F tak reknuNE
-      if (stopped) {
-        //rekniNE();
-        stopped = false;
-      } 
-      else {
-        stopped = true;
-      }      
+      c[0] = 'S';    
     } 
     
     switch (c[0]) {
@@ -108,35 +119,92 @@ void loop() {
       case 'B':
         jed_dozadu();
         break;
+      case 'A':
+        if (LedLeftState) {
+          LedLeftState = false;
+        }
+        else {
+          LedLeftState = true;
+        }
+        break;
+      case 'D':
+        if (LedRightState) {
+          LedRightState = false
+        }
+        else {
+          LedRightState = true;
+        }
+        break;
+      case 'W':
+        if (LedFrontState) {
+          digitalWrite(LED_FRONT, LOW);
+          LedFrontState = false;
+        }
+        else {
+          digitalWrite(LED_FRONT, HIGH);
+        }
+        break;
      }
   }  
-    // Pokud nemam na BT nic, pak jedu posledni moznosti
-    else {
-
-       //tvrdy stop, nemam kam jet
-      if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) { 
+  // Pokud nemam na BT nic, pak jedu posledni moznosti
+  else {
+    //tvrdy stop, nemam kam jet
+    if (c[0] == 'F' && vzd_rovne < bezpecna_vzdalenost) 
+    { 
         c[0] = 'S'; 
-        Serial.println("Menim na S");
-      }
-
-    switch (c[0]) {
-        case 'F':
-          jed_dopredu();
-          break;
-        case 'S':
-          zastav();
-          break;
-        case 'R':
-          otoc_doprava();
-          break;
-        case 'L':
-          otoc_doleva();
-          break;
-        case 'B':
-          jed_dozadu();
-          break;
-      }
+      Serial.println("Menim na S");
     }
+
+    switch (c[0]) 
+    {
+      case 'F':
+        jed_dopredu();
+        break;
+      case 'S':
+        zastav();
+        break;
+      case 'R':
+        otoc_doprava();
+        break;
+      case 'L':
+        otoc_doleva();
+        break;
+      case 'B':
+        jed_dozadu();
+        break;
+    }
+  }
+
+  // Blikani levou
+  if (LedLeftState) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillisLeft > interval) {
+      previousMillisLeft = currentMillis;
+      if (LED_LEFT_STATE == LOW) {
+        LED_LEFT_STATE = HIGH;
+      }
+      else {
+        LED_LEFT_STATE = LOW;
+      }
+      digitalWrite(LED_LEFT, LED_LEFT_STATE);
+    }
+  }
+
+  //Blikani pravou
+  if (LedRightState) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillisRight > interval) {
+      previousMillisRight = currentMillis;
+      if (LED_RIGHT_STATE == LOW) {
+        LED_RIGHT_STATE = HIGH;
+      }
+      else {
+        LED_RIGHT_STATE = LOW;
+      }
+      digitalWrite(LED_RIGHT, LED_RIGHT_STATE);
+    }
+  }
+
 }
 
 /*
