@@ -129,7 +129,7 @@ void loop() {
         break;
       case 'D':
         if (LedRightState) {
-          LedRightState = false
+          LedRightState = false;
         }
         else {
           LedRightState = true;
